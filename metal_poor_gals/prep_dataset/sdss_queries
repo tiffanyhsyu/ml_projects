@@ -1,0 +1,80 @@
+Info on SDSS imaging data files: https://www.sdss.org/dr12/imaging/images/
+	- Corrected frames for ech field and band are sky-subtracted and calibrated
+	  (as opposed to the atlas images, which are sky-subtracted but uncalibrated)
+
+
+-------
+galSpec
+-------
+Query requires 3 SDSS tables:
+- galSpecLine -- emission line flux and errors
+	http://skyserver.sdss.org/dr8/en/help/browser/browser.asp?n=galSpecLine&t=U
+- galSpecInfo -- ra, dec, obs info, redshift,
+				 targettype ('GALAXY, 'QA', 'QSO', 'ROSAT_D') but for this table,
+				 spectrotypes are all 'GALAXY', 
+				 subclass ('AGN', 'BROADLINE', 'STARBURST', 'STARFORMING'), etc.
+	http://skyserver.sdss.org/dr8/en/help/browser/browser.asp?n=galSpecInfo&t=U
+- SpecPhotoAll -- fieldID value for download link
+	https://skyserver.sdss.org/dr12/en/help/browser/browser.aspx?cmd=description+SpecPhotoAll+U#&&history=description+SpecPhotoAll+U
+
+
+SELECT
+  e.specObjID,
+  e.oii_3726_flux, e.oii_3726_flux_err, e.oii_3729_flux, e. oii_3729_flux_err,
+  e.oiii_4363_flux, e.oiii_4363_flux_err, 
+  e.h_beta_flux, e.h_beta_flux_err,
+  e.oiii_4959_flux, e.oiii_4959_flux_err, e.oiii_5007_flux, e.oiii_5007_flux_err,
+  e.h_alpha_flux, e.h_alpha_flux_err,
+  e.nii_6548_flux, e.nii_6548_flux_err, e.nii_6584_flux, e.nii_6584_flux_err,
+  e.sii_6717_flux, e.sii_6717_flux_err, e.sii_6731_flux, e.sii_6731_flux_err,
+  i.ra, i.dec, i.z, i.z_err, i.z_warning,
+  i.targettype, i.spectrotype, i.subclass,
+  i.sn_median, i.reliable, 
+  ph.run, ph.camcol, ph.field, 
+  dbo.fGetUrlFitsCFrame(ph.fieldID, 'u') as uimg into mydb.galspec_RS_uimg
+  FROM galSpecLine AS e
+    JOIN SpecPhotoAll AS ph ON
+    e.specObjID = ph.specObjID
+    JOIN galSpecInfo AS i ON
+    e.specObjID = i.specObjID
+WHERE
+  i.z < 0.1
+  AND nii_6548_flux > 3*nii_6548_flux_err
+  AND nii_6584_flux > 3*nii_6584_flux_err
+  AND sii_6717_flux > 3*sii_6717_flux_err
+  AND sii_6731_flux > 3*sii_6731_flux_err
+
+-----------------
+emissionLinesPort
+-----------------
+Query requires 2 SDSS tables:
+- emissionLinesPort -- specObjID, ra, dec, z, zErr, redshift,
+					   bpt (classification 'BLANK', 'Star Forming', 'Seyfert', 'LINER'), 
+					   emission line fluxes and errors
+	https://skyserver.sdss.org/dr10/en/help/browser/browser.aspx?cmd=description+emissionLinesPort+U#&&history=description+emissionLinesPort+U
+- SpecPhotoAll -- specObjID, fieldID value for download link
+	https://skyserver.sdss.org/dr12/en/help/browser/browser.aspx?cmd=description+SpecPhotoAll+U#&&history=description+SpecPhotoAll+U
+
+
+SELECT
+  e.specObjID, e.ra, e.dec, e.z, e.zErr, e.redshift, e.bpt, 
+  e.Flux_OII_3726, e.Flux_OII_3726_Err, e.Flux_OII_3728, e.Flux_OII_3728_Err,
+  e.Flux_OIII_4363, e.Flux_OIII_4363_Err, 
+  e.Flux_OIII_4958, e.Flux_OIII_4958_Err, e.Flux_OIII_5006, e.Flux_OIII_5006_Err,
+  e.Flux_Hb_4861, e.Flux_Hb_4861_Err,
+  e.Flux_Ha_6562, e.Flux_Ha_6562_Err,
+  e.Flux_NII_6547, e.Flux_NII_6547_Err, e.Flux_NII_6583, e.Flux_NII_6583_Err,
+  e.Flux_SII_6716, e.Flux_SII_6716_Err, e.Flux_SII_6730, e.Flux_SII_6730_Err,
+  dbo.fGetUrlFitsCFrame(ph.fieldID, 'u') as uimg into mydb.emlineport_RS_uimg
+  FROM emissionLinesPort AS e
+    JOIN SpecPhotoAll AS ph ON
+    e.specObjID = ph.specObjID
+WHERE
+  e.z < 0.1
+  AND Flux_NII_6547 > 3*Flux_NII_6547_Err
+  AND Flux_NII_6583 > 3*Flux_NII_6583_Err
+  AND Flux_SII_6716 > 3*Flux_SII_6716_Err
+  AND Flux_SII_6730 > 3*Flux_SII_6730_Err
+
+
+
