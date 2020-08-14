@@ -29,7 +29,7 @@ galspec_flux = np.zeros((Ngal_galspec, 2*pix_sz, 2*pix_sz, 5)) # empty array to 
 for i in range(Ngal_galspec):
 	start = datetime.datetime.now()
 
-	# Save name of the u-band .fits file
+	# Save name of the u-band .ffits file
 	#url = galspec_final['uimg'][i]
 	#u_frame = galspec_final['uimg'][i].split('/')[-1] #.strip('.bz2')
 	url = uimg[i]
@@ -106,11 +106,20 @@ for i in range(Ngal_galspec):
 	galspec_flux[i, :, :, 4] = zband[0].data[zymin:zymax, zxmin:zxmax]
 
 	# Delete SDSS ugriz .fits files if the next system doesn't use the same files
-	if uimg[i] == uimg[i+1]:
-		print ('\t Next system in same SDSS field -- not deleting files')
+	if i < Ngal_galspec - 1:
+		if uimg[i] == uimg[i+1]:
+			print ('\t Next system in same SDSS field -- not deleting files')
+
+		else:
+			print ('\t Deleting SDSS .fits files')
+			os.remove(u_frame)
+			os.remove(u_frame.replace('-u-', '-g-'))
+			os.remove(u_frame.replace('-u-', '-r-'))
+			os.remove(u_frame.replace('-u-', '-i-'))
+			os.remove(u_frame.replace('-u-', '-z-'))
 
 	else:
-		print ('\t Deleting SDSS .fits files')
+		print ('\t Last file!! Deleting SDSS .fits files')
 		os.remove(u_frame)
 		os.remove(u_frame.replace('-u-', '-g-'))
 		os.remove(u_frame.replace('-u-', '-r-'))
